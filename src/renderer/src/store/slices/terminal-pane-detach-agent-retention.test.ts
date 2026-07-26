@@ -5,13 +5,8 @@ import { createTestStore, makeTab, makeWorktree, seedStore } from './store-test-
 import type { AgentStatusEntry } from '../../../../shared/agent-status-types'
 import type { DashboardAgentRow } from '@/components/dashboard/useDashboardData'
 
-// Why: detaching a completed split pane into its own tab keeps the leafId but
-// changes the tabId, so the paneKey migrates from `sourceTab:leaf` to
-// `targetTab:leaf`. The sidebar retention hook (useRetainedAgentsSync) tracks
-// live pane keys in its own ref and only observes the source key disappearing.
-// Without a suppressor on the source key it misreads that disappear as a
-// finished `done` agent and resurrects an unclickable ghost row. These tests
-// pin the store→hook contract that prevents the ghost.
+// Detaching a completed split pane migrates the paneKey `sourceTab:leaf → targetTab:leaf`;
+// these tests pin the store→hook contract that stops the sidebar resurrecting a ghost row.
 
 const WORKTREE_ID = 'repo::/repo/worktree'
 const SOURCE_TAB = 'tab-source'

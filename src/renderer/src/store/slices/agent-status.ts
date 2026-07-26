@@ -1304,18 +1304,12 @@ export const createAgentStatusSlice: StateCreator<AppState, [], [], AgentStatusS
       const targetTabId = getTabIdFromPaneKey(to) ?? undefined
       const targetLeafId = getLeafIdFromPaneKey(to) ?? undefined
       set((s) => {
-        // Why: useRetainedAgentsSync tracks live pane keys in its own ref and only
-        // sees `from` vanish on the next epoch — it never learns the pane migrated.
-        // A live/done agent has no suppressor on `from`, so moving suppressors is a
-        // no-op and leaves `from` unguarded; the hook then misreads the disappear as
-        // a finished-and-gone `done` agent and resurrects an unclickable ghost row
-        // (also double-counting). Plant a one-shot suppressor on `from` so the
-        // disappear is consumed, not retained. Only when `from` was actually live:
-        // a suppressor is consumed on a live→gone transition, so planting it for a
-        // pane that never had a live agent would leak forever (mirrors dropAgentStatus).
+        // Plant a one-shot suppressor on the source key so useRetainedAgentsSync —
+        // which only sees `from` vanish, not the migration — can't resurrect a ghost row.
         const movedSuppressors = movePaneKeyedRecord(s.retentionSuppressedPaneKeys, from, to)
+        // Guard on fromWasLive: a suppressor is consumed only on a live→gone transition, else it leaks.
         const fromWasLive = from in s.agentStatusByPaneKey
-        const retentionSuppressedPaneKeys =
+        const retentionSuppressedPaneKeys: Record<string, true> =
           fromWasLive && !(from in movedSuppressors)
             ? { ...movedSuppressors, [from]: true }
             : movedSuppressors
